@@ -3,6 +3,22 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
+const Sequelize = require('sequelize')
+const session = require('express-session')
+const SequelizeStore = require('connect-session-sequelize')(session.Store);
+
+const sequelize = new Sequelize('managers_debts', 'root', '', {
+    host: 'localhost',
+    dialect: 'mysql',
+    pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+    },
+    // http://docs.sequelizejs.com/manual/tutorial/querying.html#operators
+    operatorsAliases: false
+});
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
@@ -18,6 +34,26 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(session({
+  secret: 'gdfhbdfbgdfhet4354',
+  store: new SequelizeStore({
+      db: sequelize
+  }),
+  cookie: {
+      path: '/',
+      httpOnly: true,
+      maxAge: 60 * 60 * 1000
+  },
+  resave: false,
+  saveUninitialized: true
+}))
+
+
+sequelize.sync(
+  // {force: true}
+  )
+
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
